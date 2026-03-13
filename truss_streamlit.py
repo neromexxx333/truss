@@ -5,6 +5,16 @@ import matplotlib.pyplot as plt
 
 st.title("Analisis Rangka Batang FEM")
 
+st.markdown(
+"<h4 style='text-align:left'>by Ir. Darmansyah Tjitradi, MT., IPU</h4>",
+unsafe_allow_html=True
+)
+
+st.markdown(
+"<h5 style='text-align:left'>====================================================</h5>",
+unsafe_allow_html=True
+)
+
 scale = st.sidebar.slider(
     "Skala deformasi",
     min_value=1,
