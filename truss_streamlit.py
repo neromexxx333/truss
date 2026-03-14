@@ -28,12 +28,17 @@ with col2:
     st.title("Analisis Rangka Batang FEM 2D")
 
     st.markdown(
-    "<h4 style='margin-bottom:0;'>by Ir. Darmansyah Tjitradi, MT., IPU</h4>",
+    "<h4 style='margin-bottom:0;'>Pengembang: Ir. Darmansyah Tjitradi, M.T., IPU</h4>",
     unsafe_allow_html=True
     )
 
     st.markdown(
-    "<h4 style='margin-top:0;'>Dosen Fakultas Teknik Universitas Lambung Mangkurat</h4>",
+    "<h4 style='margin-top:0;'>Program Studi Pendidikan Profesi Insinyur</h4>",
+    unsafe_allow_html=True
+    )
+    
+    st.markdown(
+    "<h4 style='margin-top:0;'>Fakultas Teknik Universitas Lambung Mangkurat</h4>",
     unsafe_allow_html=True
     )
 
