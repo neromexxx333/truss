@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from pathlib import Path
+
 # ============================================================
 # JUDUL APLIKASI
 # ============================================================
@@ -21,10 +21,10 @@ from pathlib import Path
 col1, col2 = st.columns([1,5])
 
 with col1:
-    logo_path = Path(__file__).parent / "Logo_ULM.png"
-    st.image(str(logo_path), width=150)
+    st.image("logo_ULM.png", width=150)
 
 with col2:
+    
     st.markdown(
     "<h2 style='margin-bottom:0;'>Analisis Rangka Batang FEM 2D</h2>",
     unsafe_allow_html=True
@@ -34,7 +34,7 @@ with col2:
     "<h5 style='margin-bottom:0;'>Pengembang: Ir. Darmansyah Tjitradi, M.T., IPU</h5>",
     unsafe_allow_html=True
     )
-    
+
     st.markdown(
     "<h5 style='margin-top:0;'>Fakultas Teknik Universitas Lambung Mangkurat</h5>",
     unsafe_allow_html=True
@@ -44,8 +44,7 @@ with col2:
     "<h5 style='text-align:left'>========================================================</h5>",
     unsafe_allow_html=True
     )
-    
-    # st.markdown("### Disclaimer:")
+
     st.markdown(
     "<h5 style='margin-top:0;'>Disclaimer:</h5>",
     unsafe_allow_html=True
@@ -60,6 +59,7 @@ with col2:
     - Pengguna bertanggung jawab sepenuhnya atas interpretasi dan penggunaan hasil analisis yang diperoleh dari aplikasi ini.
     """
     )
+
 
 # ============================================================
 # KONTROL SKALA DEFORMASI
@@ -221,88 +221,84 @@ if uploaded:
     # PLOT GEOMETRI STRUKTUR
     # ========================================================
 
-    # ========================================================
-    # PLOT GEOMETRI STRUKTUR
-    # ========================================================
-
     def plot_geometry():
 
-        fig, ax = plt.subplots()
+            fig, ax = plt.subplots()
 
-        xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
-        ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
+            xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
+            ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
 
-        offset = 0.01 * max(xmax-xmin, ymax-ymin)
-        scale_arrow = 0.08 * max(xmax-xmin, ymax-ymin)
+            offset = 0.01 * max(xmax-xmin, ymax-ymin)
+            scale_arrow = 0.08 * max(xmax-xmin, ymax-ymin)
 
-        # gambar batang
-        for i,(n1,n2) in enumerate(elements):
+            # gambar batang
+            for i,(n1,n2) in enumerate(elements):
 
-            x=[nodes[n1][0],nodes[n2][0]]
-            y=[nodes[n1][1],nodes[n2][1]]
+                x=[nodes[n1][0],nodes[n2][0]]
+                y=[nodes[n1][1],nodes[n2][1]]
 
-            ax.plot(x,y,"k")
+                ax.plot(x,y,"k")
 
-            xm=(x[0]+x[1])/2
-            ym=(y[0]+y[1])/2
+                xm=(x[0]+x[1])/2
+                ym=(y[0]+y[1])/2
 
-            ax.text(xm,ym+offset,f"E{i+1}",color="blue",ha="center")
+                ax.text(xm,ym+offset,f"E{i+1}",color="blue",ha="center")
 
             # gambar node
-        for i,(x,y) in enumerate(nodes):
+            for i,(x,y) in enumerate(nodes):
 
-            ax.plot(x,y,"ro")
-            ax.text(x+offset,y+offset,f"N{i+1}",color="red")
+                ax.plot(x,y,"ro")
+                ax.text(x+offset,y+offset,f"N{i+1}",color="red")
 
             # gambar beban
-        for _,row in load_df.iterrows():
+            for _,row in load_df.iterrows():
 
-            node=int(row["node"])-1
-            fx=row["fx"]
-            fy=row["fy"]
+                node=int(row["node"])-1
+                fx=row["fx"]
+                fy=row["fy"]
 
-            x,y=nodes[node]
+                x,y=nodes[node]
 
-            if abs(fx)>0:
-                direction=np.sign(fx)
+                if abs(fx)>0:
+                    direction=np.sign(fx)
 
-                ax.arrow(
-                    x,y,
-                    direction*scale_arrow,0,
-                    head_width=0.04*scale_arrow,
-                    color="green",
-                    length_includes_head=True
-                )
+                    ax.arrow(
+                        x,y,
+                        direction*scale_arrow,0,
+                        head_width=0.04*scale_arrow,
+                        color="green",
+                        length_includes_head=True
+                    )
 
-                ax.text(
-                    x+direction*scale_arrow,
-                    y,
-                    f"{fx/1000:.1f} kN",
-                    color="green"
-                )
+                    ax.text(
+                        x+direction*scale_arrow,
+                        y,
+                        f"{fx/1000:.1f} kN",
+                        color="green"
+                    )
 
-            if abs(fy)>0:
-                direction=np.sign(fy)
+                if abs(fy)>0:
+                    direction=np.sign(fy)
 
-                ax.arrow(
-                    x,y,
-                    0,direction*scale_arrow,
-                    head_width=0.04*scale_arrow,
-                    color="green",
-                    length_includes_head=True
-                )
+                    ax.arrow(
+                        x,y,
+                        0,direction*scale_arrow,
+                        head_width=0.04*scale_arrow,
+                        color="green",
+                        length_includes_head=True
+                    )
 
-                ax.text(
-                    x,
-                    y+direction*scale_arrow,
-                    f"{fy/1000:.1f} kN",
-                    color="green"
-                )
+                    ax.text(
+                        x,
+                        y+direction*scale_arrow,
+                        f"{fy/1000:.1f} kN",
+                        color="green"
+                    )
 
-        ax.set_title("Geometri Rangka dan Beban Terpusat")
-        ax.axis("equal")
+            ax.set_title("Geometri Rangka dan Beban Terpusat")
+            ax.axis("equal")
 
-        return fig
+            return fig
 
 
     st.subheader("Geometri Rangka")
@@ -372,6 +368,7 @@ if uploaded:
         # gaya batang
         force = []
         stress = []
+        deform = []
 
         for i, (n1, n2) in enumerate(elements):
 
@@ -390,9 +387,13 @@ if uploaded:
             B = np.array([-c, -s, c, s]) / L
 
             strain = B @ u_elem
+
+            delta = strain * L
+
             sigma = E[i] * strain
             N = sigma * A[i]
 
+            deform.append(delta)
             force.append(N)
             stress.append(sigma)
 
@@ -400,7 +401,7 @@ if uploaded:
         # hitung reaksi tumpuan
         R = K @ u - F
 
-        return u, np.array(force), np.array(stress), R, K
+        return u, np.array(force), np.array(stress), np.array(deform), R, K
 
 
     # ========================================================
@@ -409,7 +410,7 @@ if uploaded:
 
     if st.button("Jalankan Analisis"):
 
-        u, force, stress, R, K = fem()
+        u, force, stress, deform, R, K = fem()
 
 
         # ====================================================
@@ -446,6 +447,7 @@ if uploaded:
             "element": np.arange(1, n_elem + 1),
             "node_i": elements[:, 0] + 1,
             "node_j": elements[:, 1] + 1,
+            "Deformasi Aksial (mm)": deform * 1000,
             "Gaya Aksial (N)": force,
             "Tegangan Aksial (MPa)": stress / 1e6
         })
@@ -453,11 +455,15 @@ if uploaded:
         styled_table = (
             element_result.style
             .format({
+                "Deformasi Aksial (mm)": "{:.4f}",
                 "Gaya Aksial (N)": "{:.4f}",
                 "Tegangan Aksial (MPa)": "{:.4f}"
             })
             .set_properties(subset=["element", "node_i", "node_j"], **{"text-align": "center"})
-            .set_properties(subset=["Gaya Aksial (N)", "Tegangan Aksial (MPa)"], **{"text-align": "right"})
+            .set_properties(
+                subset=["Deformasi Aksial (mm)", "Gaya Aksial (N)", "Tegangan Aksial (MPa)"],
+                **{"text-align": "right"}
+            )
             .set_table_styles(css)
             .hide(axis="index")
         )
