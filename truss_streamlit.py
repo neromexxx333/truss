@@ -221,15 +221,19 @@ if uploaded:
     # PLOT GEOMETRI STRUKTUR
     # ========================================================
 
-     def plot_geometry():
+    # ========================================================
+    # PLOT GEOMETRI STRUKTUR
+    # ========================================================
 
-            fig, ax = plt.subplots()
+    def plot_geometry():
 
-            xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
-            ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
+        fig, ax = plt.subplots()
 
-            offset = 0.01 * max(xmax-xmin, ymax-ymin)
-            scale_arrow = 0.08 * max(xmax-xmin, ymax-ymin)
+        xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
+        ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
+
+        offset = 0.01 * max(xmax-xmin, ymax-ymin)
+        scale_arrow = 0.08 * max(xmax-xmin, ymax-ymin)
 
             # gambar batang
             for i,(n1,n2) in enumerate(elements):
