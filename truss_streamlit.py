@@ -34,11 +34,6 @@ with col2:
     "<h5 style='margin-bottom:0;'>Pengembang: Ir. Darmansyah Tjitradi, M.T., IPU</h5>",
     unsafe_allow_html=True
     )
-
-    st.markdown(
-    "<h5 style='margin-top:0;'>Program Studi Pendidikan Profesi Insinyur</h5>",
-    unsafe_allow_html=True
-    )
     
     st.markdown(
     "<h5 style='margin-top:0;'>Fakultas Teknik Universitas Lambung Mangkurat</h5>",
