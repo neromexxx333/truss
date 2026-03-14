@@ -41,7 +41,7 @@ with col2:
     )
 
     st.markdown(
-    "<h5 style='text-align:left'>======================================================</h5>",
+    "<h5 style='text-align:left'>========================================================</h5>",
     unsafe_allow_html=True
     )
     
