@@ -53,6 +53,9 @@ with col2:
     # st.markdown("### Disclaimer:")
     st.markdown(
     "<h4 style='margin-top:0;'>### Disclaimer:</h4>",
+    unsafe_allow_html=True
+    )    
+    
     st.warning(
     """
     - Aplikasi ini dikembangkan sebagai alat bantu pembelajaran dan penelitian dalam analisis struktur menggunakan Metode Elemen Hingga (Finite Element Method).
