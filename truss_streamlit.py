@@ -52,7 +52,7 @@ with col2:
     
     # st.markdown("### Disclaimer:")
     st.markdown(
-    "<h4 style='margin-top:0;'>### Disclaimer:</h4>",
+    "<h6 style='margin-top:0;'>Disclaimer:</h6>",
     unsafe_allow_html=True
     )    
     
