@@ -1,7 +1,18 @@
+# ============================================================
+# APLIKASI ANALISIS RANGKA BATANG FEM 2D
+# Menggunakan Python + Streamlit
+# Penulis : Ir. Darmansyah Tjitradi, MT., IPU
+# ============================================================
+
 import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+
+# ============================================================
+# JUDUL APLIKASI
+# ============================================================
 
 st.title("Analisis Rangka Batang FEM")
 
@@ -15,6 +26,11 @@ st.markdown(
 unsafe_allow_html=True
 )
 
+
+# ============================================================
+# KONTROL SKALA DEFORMASI
+# ============================================================
+
 scale = st.sidebar.slider(
     "Skala deformasi",
     min_value=1,
@@ -23,20 +39,36 @@ scale = st.sidebar.slider(
     step=1
 )
 
+
+# ============================================================
+# UPLOAD FILE EXCEL
+# ============================================================
+
 uploaded = st.file_uploader("Upload file Excel", type=["xlsx"])
 
+
+# ============================================================
+# PROGRAM DIJALANKAN SETELAH FILE DIUPLOAD
+# ============================================================
+
 if uploaded:
+
+    # ========================================================
+    # MEMBACA DATA DARI EXCEL
+    # ========================================================
 
     node_df = pd.read_excel(uploaded, sheet_name="nodes")
     elem_df = pd.read_excel(uploaded, sheet_name="elements")
     load_df = pd.read_excel(uploaded, sheet_name="loads")
     support_df = pd.read_excel(uploaded, sheet_name="tumpuan")
 
+    # normalisasi nama kolom
     node_df.columns = node_df.columns.str.lower().str.strip()
     elem_df.columns = elem_df.columns.str.lower().str.strip()
     load_df.columns = load_df.columns.str.lower().str.strip()
     support_df.columns = support_df.columns.str.lower().str.strip()
 
+    # rename agar konsisten
     node_df = node_df.rename(columns={"x(m)": "x", "y(m)": "y"})
     elem_df = elem_df.rename(columns={"a(m2)": "a", "e(n/m2)": "e"})
     load_df = load_df.rename(columns={"fx(n)": "fx", "fy(n)": "fy"})
@@ -45,6 +77,11 @@ if uploaded:
         "rx": "x",
         "ry": "y",
     })
+
+
+    # ========================================================
+    # KONVERSI DATA KE ARRAY NUMPY
+    # ========================================================
 
     nodes = node_df[["x", "y"]].values
     elements = elem_df[["node_i", "node_j"]].values.astype(int) - 1
@@ -55,17 +92,24 @@ if uploaded:
     n_node = len(nodes)
     n_elem = len(elements)
 
+
+    # ========================================================
+    # FORMAT TABEL UNTUK TAMPILAN
+    # ========================================================
+
     elem_display = elem_df.rename(columns={"a": "A(m2)", "e": "E(N/m2)"})
     load_display = load_df.rename(columns={"fx": "Fx(N)", "fy": "Fy(N)"})
-    support_display = support_df.rename(columns={
-    "x": "Rx",
-    "y": "Ry"
-    })
+    support_display = support_df.rename(columns={"x": "Rx", "y": "Ry"})
 
     css = [
         {"selector": "table", "props": [("table-layout", "auto"), ("width", "100%")]},
         {"selector": "th", "props": [("text-align", "center")]}
     ]
+
+
+    # ========================================================
+    # TABEL DATA NODE
+    # ========================================================
 
     styled_node = (
         node_df.style
@@ -78,6 +122,11 @@ if uploaded:
     st.subheader("Data Node")
     st.markdown(styled_node.to_html(), unsafe_allow_html=True)
 
+
+    # ========================================================
+    # TABEL DATA ELEMEN
+    # ========================================================
+
     styled_elem = (
         elem_display.style
         .set_properties(subset=["element", "node_i", "node_j"], **{"text-align": "center"})
@@ -88,6 +137,11 @@ if uploaded:
 
     st.subheader("Data Elemen")
     st.markdown(styled_elem.to_html(), unsafe_allow_html=True)
+
+
+    # ========================================================
+    # TABEL DATA BEBAN
+    # ========================================================
 
     styled_load = (
         load_display.style
@@ -100,9 +154,14 @@ if uploaded:
     st.subheader("Data Beban")
     st.markdown(styled_load.to_html(), unsafe_allow_html=True)
 
+
+    # ========================================================
+    # TABEL DATA TUMPUAN
+    # ========================================================
+
     styled_support = (
         support_display.style
-        .set_properties(subset=["node","Rx","Ry"], **{"text-align": "center"})
+        .set_properties(subset=["node", "Rx", "Ry"], **{"text-align": "center"})
         .set_table_styles(css)
         .hide(axis="index")
     )
@@ -110,12 +169,23 @@ if uploaded:
     st.subheader("Data Tumpuan")
     st.markdown(styled_support.to_html(), unsafe_allow_html=True)
 
+
+    # ========================================================
+    # MEMBENTUK VEKTOR GAYA GLOBAL
+    # ========================================================
+
     F = np.zeros(2 * n_node)
 
     for _, row in load_df.iterrows():
+
         n = int(row["node"]) - 1
         F[2 * n] = row["fx"]
         F[2 * n + 1] = row["fy"]
+
+
+    # ========================================================
+    # PLOT GEOMETRI STRUKTUR
+    # ========================================================
 
     def plot_geometry():
 
@@ -124,7 +194,7 @@ if uploaded:
         xmin, xmax = nodes[:, 0].min(), nodes[:, 0].max()
         ymin, ymax = nodes[:, 1].min(), nodes[:, 1].max()
 
-        offset = 0.02 * max(xmax - xmin, ymax - ymin)
+        offset = 0.01 * max(xmax - xmin, ymax - ymin)
 
         for i, (n1, n2) in enumerate(elements):
 
@@ -148,11 +218,18 @@ if uploaded:
 
         return fig
 
+
     st.subheader("Geometri Rangka")
     st.pyplot(plot_geometry())
 
+
+    # ========================================================
+    # FUNGSI ANALISIS FEM
+    # ========================================================
+
     def fem():
 
+        # matriks kekakuan global
         K = np.zeros((2 * n_node, 2 * n_node))
 
         for i, (n1, n2) in enumerate(elements):
@@ -178,6 +255,8 @@ if uploaded:
                 for b in range(4):
                     K[dof[a], dof[b]] += k[a, b]
 
+
+        # menentukan DOF yang dikunci
         fixed = []
 
         for _, row in support_df.iterrows():
@@ -190,8 +269,11 @@ if uploaded:
             if int(row["y"]) == 1:
                 fixed.append(2 * node + 1)
 
+
         free = list(set(range(2 * n_node)) - set(fixed))
 
+
+        # sistem persamaan
         Kff = K[np.ix_(free, free)]
         Ff = F[free]
 
@@ -200,6 +282,8 @@ if uploaded:
         u = np.zeros(2 * n_node)
         u[free] = uf
 
+
+        # gaya batang
         force = []
         stress = []
 
@@ -226,11 +310,25 @@ if uploaded:
             force.append(N)
             stress.append(sigma)
 
-        return u, np.array(force), np.array(stress)
+
+        # hitung reaksi tumpuan
+        R = K @ u - F
+
+        return u, np.array(force), np.array(stress), R, K
+
+
+    # ========================================================
+    # MENJALANKAN ANALISIS
+    # ========================================================
 
     if st.button("Jalankan Analisis"):
 
-        u, force, stress = fem()
+        u, force, stress, R, K = fem()
+
+
+        # ====================================================
+        # PERPINDAHAN NODE
+        # ====================================================
 
         ux = u[0::2]
         uy = u[1::2]
@@ -252,6 +350,11 @@ if uploaded:
 
         st.subheader("Perpindahan Node")
         st.markdown(styled_disp.to_html(), unsafe_allow_html=True)
+
+
+        # ====================================================
+        # GAYA AKSIAL BATANG
+        # ====================================================
 
         element_result = pd.DataFrame({
             "element": np.arange(1, n_elem + 1),
@@ -276,6 +379,231 @@ if uploaded:
         st.subheader("Gaya Aksial dan Tegangan Batang")
         st.markdown(styled_table.to_html(), unsafe_allow_html=True)
 
+
+        # ====================================================
+        # REAKSI TUMPUAN
+        # ====================================================
+
+        reaction_data = []
+
+        for _, row in support_df.iterrows():
+
+            node = int(row["node"]) - 1
+
+            rx = 0
+            ry = 0
+
+            if int(row["x"]) == 1:
+                rx = R[2 * node]
+                if abs(rx) < 1e-9:
+                    rx = 0
+
+            if int(row["y"]) == 1:
+                ry = R[2 * node + 1]
+                if abs(ry) < 1e-9:
+                    ry = 0
+
+            reaction_data.append([
+                node + 1,
+                rx / 1000,
+                ry / 1000
+            ])
+
+        reaction_df = pd.DataFrame(
+            reaction_data,
+            columns=["node", "Rx (kN)", "Ry (kN)"]
+        )
+
+        styled_reaction = (
+            reaction_df.style
+            .format({
+                "Rx (kN)": "{:.4f}",
+                "Ry (kN)": "{:.4f}"
+            })
+            .set_properties(subset=["node"], **{"text-align": "center"})
+            .set_properties(subset=["Rx (kN)", "Ry (kN)"], **{"text-align": "right"})
+            .set_table_styles(css)
+            .hide(axis="index")
+        )
+
+        st.subheader("Reaksi Tumpuan")
+        st.markdown(styled_reaction.to_html(), unsafe_allow_html=True)
+
+# ====================================================
+# VISUALISASI REAKSI TUMPUAN
+# ====================================================
+
+        def plot_reaction():
+
+            fig, ax = plt.subplots()
+
+            xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
+            ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
+
+            offset = 0.01 * max(xmax-xmin, ymax-ymin)
+
+            # gambar rangka
+            for (n1,n2) in elements:
+
+                ax.plot(
+                    [nodes[n1][0], nodes[n2][0]],
+                    [nodes[n1][1], nodes[n2][1]],
+                    "k"
+                )
+
+            # gambar node
+            for i,(x,y) in enumerate(nodes):
+
+                ax.plot(x,y,"ro")
+                ax.text(x+offset,y+offset,f"N{i+1}",color="red")
+
+            # gambar reaksi
+            for _,row in support_df.iterrows():
+
+                node = int(row["node"]) - 1
+                x,y = nodes[node]
+
+                rx = 0
+                ry = 0
+
+                if int(row["x"]) == 1:
+                    rx = R[2*node]
+
+                if int(row["y"]) == 1:
+                    ry = R[2*node+1]
+
+                # normalisasi panjang panah agar tidak terlalu besar
+                mag = np.sqrt(rx**2 + ry**2)
+
+                if mag > 0:
+                    scale_arrow = 0.2 * max(xmax-xmin, ymax-ymin)
+
+                    ax.arrow(
+                        x,
+                        y,
+                        scale_arrow * rx/mag,
+                        scale_arrow * ry/mag,
+                        head_width=0.05*scale_arrow,
+                        color="green",
+                        length_includes_head=True
+                    )
+
+                    ax.text(
+                        x + scale_arrow * rx/mag,
+                        y + scale_arrow * ry/mag,
+                        f"{mag/1000:.1f} kN",
+                        color="green"
+                    )
+
+            ax.set_title("Visualisasi Reaksi Tumpuan")
+            ax.axis("equal")
+
+            return fig
+
+        st.subheader("Visualisasi Reaksi Tumpuan")
+        st.pyplot(plot_reaction())
+
+        # ====================================================
+        # VISUALISASI REAKSI GLOBAL (Rx dan Ry)
+        # ====================================================
+
+        def plot_reaction_components():
+
+            fig, ax = plt.subplots()
+
+            xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
+            ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
+
+            offset = 0.01 * max(xmax-xmin, ymax-ymin)
+            scale_arrow = 0.2 * max(xmax-xmin, ymax-ymin)
+
+            # gambar batang
+            for (n1,n2) in elements:
+
+                ax.plot(
+                    [nodes[n1][0],nodes[n2][0]],
+                    [nodes[n1][1],nodes[n2][1]],
+                    "k"
+                )
+
+            # gambar node
+            for i,(x,y) in enumerate(nodes):
+
+                ax.plot(x,y,"ro")
+                ax.text(x+offset,y+offset,f"N{i+1}",color="red")
+
+            # gambar komponen reaksi
+            for _,row in support_df.iterrows():
+
+                node = int(row["node"]) - 1
+                x,y = nodes[node]
+
+                rx = 0
+                ry = 0
+
+                if int(row["x"]) == 1:
+                    rx = R[2*node]
+
+                if int(row["y"]) == 1:
+                    ry = R[2*node+1]
+
+                # panah arah X
+                if abs(rx) > 0:
+
+                    direction = np.sign(rx)
+
+                    ax.arrow(
+                        x,
+                        y,
+                        direction * scale_arrow,
+                        0,
+                        head_width=0.05*scale_arrow,
+                        color="blue",
+                        length_includes_head=True
+                    )
+
+                    ax.text(
+                        x + direction * scale_arrow,
+                        y,
+                        f"Rx={rx/1000:.1f} kN",
+                        color="blue"
+                    )
+
+                # panah arah Y
+                if abs(ry) > 0:
+
+                    direction = np.sign(ry)
+
+                    ax.arrow(
+                        x,
+                        y,
+                        0,
+                        direction * scale_arrow,
+                        head_width=0.05*scale_arrow,
+                        color="green",
+                        length_includes_head=True
+                    )
+
+                    ax.text(
+                        x,
+                        y + direction * scale_arrow,
+                        f"Ry={ry/1000:.1f} kN",
+                        color="green"
+                    )
+
+            ax.set_title("Komponen Reaksi Tumpuan (Sumbu Global)")
+            ax.axis("equal")
+
+            return fig
+
+        st.subheader("Komponen Reaksi Tumpuan Global")
+        st.pyplot(plot_reaction_components())
+
+
+# ====================================================
+# DIAGRAM GAYA BATANG + NOMOR NODE
+# ====================================================
+
         def plot_force():
 
             fig, ax = plt.subplots()
@@ -283,7 +611,11 @@ if uploaded:
             xmin, xmax = nodes[:, 0].min(), nodes[:, 0].max()
             ymin, ymax = nodes[:, 1].min(), nodes[:, 1].max()
 
-            offset = 0.03 * max(xmax - xmin, ymax - ymin)
+            offset = 0.01 * max(xmax - xmin, ymax - ymin)
+
+            # -----------------------------------------------
+            # gambar batang dengan warna tarik dan tekan
+            # -----------------------------------------------
 
             for i, (n1, n2) in enumerate(elements):
 
@@ -301,17 +633,39 @@ if uploaded:
                 nx = -(y2 - y1) / L
                 ny = (x2 - x1) / L
 
-                ax.text(xm + offset * nx, ym + offset * ny,
-                        f"{force[i] / 1000:.1f} kN",
-                        ha="center")
+                ax.text(
+                    xm + offset * nx,
+                    ym + offset * ny,
+                    f"{force[i] / 1000:.1f} kN",
+                    ha="center"
+                )
+
+            # -----------------------------------------------
+            # gambar node
+            # -----------------------------------------------
+
+            for i, (x, y) in enumerate(nodes):
+
+                ax.plot(x, y, "ko")
+
+                ax.text(
+                    x + offset,
+                    y + offset,
+                    f"N{i+1}",
+                    color="black"
+                )
 
             ax.set_title("Diagram Gaya Batang (Tarik Biru, Tekan Merah)")
             ax.axis("equal")
 
             return fig
-
+        
         st.subheader("Diagram Tarik dan Tekan")
         st.pyplot(plot_force())
+
+        # ====================================================
+        # DIAGRAM DEFORMASI
+        # ====================================================
 
         def plot_deformation():
 
@@ -320,7 +674,7 @@ if uploaded:
             xmin,xmax = nodes[:,0].min(),nodes[:,0].max()
             ymin,ymax = nodes[:,1].min(),nodes[:,1].max()
 
-            offset = 0.03*max(xmax-xmin,ymax-ymin)
+            offset = 0.01*max(xmax-xmin,ymax-ymin)
 
             # struktur asli
             for (n1,n2) in elements:
