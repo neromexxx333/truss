@@ -190,7 +190,7 @@ if uploaded:
 
 
     # ========================================================
-    # TABEL DATA BEBAN
+    # TABEL DATA BEBAN NODAL
     # ========================================================
 
     styled_load = (
@@ -201,7 +201,7 @@ if uploaded:
         .hide(axis="index")
     )
 
-    st.subheader("Data Beban")
+    st.subheader("Data Beban Nodal")
     st.markdown(styled_load.to_html(), unsafe_allow_html=True)
 
 
@@ -412,13 +412,13 @@ if uploaded:
                         color="green"
                     )
 
-            ax.set_title("Geometri Rangka dan Beban Terpusat")
+            ax.set_title("Geometri Struktur Rangka")
             ax.axis("equal")
 
             return fig
 
 
-    st.subheader("Geometri Rangka")
+    st.subheader("Geometri Struktur Rangka")
     st.pyplot(plot_geometry())
 
     # ========================================================
@@ -707,12 +707,12 @@ if uploaded:
                         color="green"
                     )
 
-            ax.set_title("Visualisasi Reaksi Tumpuan")
+            ax.set_title("Reaksi Tumpuan Struktur Rangka")
             ax.axis("equal")
 
             return fig
 
-        st.subheader("Visualisasi Reaksi Tumpuan")
+        st.subheader("Reaksi Tumpuan Struktur Rangka")
         st.pyplot(plot_reaction())
 
         # ====================================================
@@ -803,12 +803,12 @@ if uploaded:
                         color="green"
                     )
 
-            ax.set_title("Komponen Reaksi Tumpuan (Sumbu Global)")
+            ax.set_title("Reaksi Tumpuan Struktur Rangka (Sumbu Global)")
             ax.axis("equal")
 
             return fig
 
-        st.subheader("Komponen Reaksi Tumpuan Global")
+        st.subheader("Reaksi Tumpuan Struktur Rangka (Sumbu Global)")
         st.pyplot(plot_reaction_components())
 
 
