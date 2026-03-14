@@ -21,7 +21,7 @@ from pathlib import Path
 col1, col2 = st.columns([1,5])
 
 with col1:
-    logo_path = Path(__file__).parent / "logo_ULM.png"
+    logo_path = Path(__file__).parent / "Logo_ULM.png"
     st.image(str(logo_path), width=150)
 
 with col2:
