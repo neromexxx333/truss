@@ -65,12 +65,22 @@ with col2:
 # KONTROL SKALA DEFORMASI
 # ============================================================
 
+st.sidebar.markdown(
+    "<p style='font-size:30px;font-weight:bold;text-align:center'>Skala Deformasi</p>",
+    unsafe_allow_html=True
+)
+
 scale = st.sidebar.slider(
-    "Skala deformasi",
+    " ",
     min_value=1,
     max_value=1000,
-    value=100,
+    value=25,
     step=1
+)
+
+st.sidebar.markdown(
+    f"<p style='font-size:40px;font-weight:bold;text-align:center'>{scale}</p>",
+    unsafe_allow_html=True
 )
 
 
@@ -145,10 +155,16 @@ if uploaded:
     # TABEL DATA NODE
     # ========================================================
 
+    # dataframe khusus untuk tampilan
+    node_display = node_df.rename(columns={
+        "x": "x(m)",
+        "y": "y(m)"
+    })
+
     styled_node = (
-        node_df.style
+        node_display.style
         .set_properties(subset=["node"], **{"text-align": "center"})
-        .set_properties(subset=["x", "y"], **{"text-align": "right"})
+        .set_properties(subset=["x(m)", "y(m)"], **{"text-align": "right"})
         .set_table_styles(css)
         .hide(axis="index")
     )
@@ -250,6 +266,107 @@ if uploaded:
                 ax.plot(x,y,"ro")
                 ax.text(x+offset,y+offset,f"N{i+1}",color="red")
 
+# ========================================================
+# GAMBAR SIMBOL TUMPUAN
+# ========================================================
+
+            for _, row in support_df.iterrows():
+
+                node = int(row["node"]) - 1
+                x, y = nodes[node]
+
+                rx = int(row["x"])
+                ry = int(row["y"])
+
+                size = 0.04 * max(xmax-xmin, ymax-ymin)
+
+                # -----------------------------
+                # TUMPUAN SENDI
+                # -----------------------------
+                if rx == 1 and ry == 1:
+
+                    triangle = plt.Polygon(
+                        [
+                            (x-size, y-size),
+                            (x+size, y-size),
+                            (x, y)
+                        ],
+                        color="black"
+                    )
+
+                    ax.add_patch(triangle)
+
+
+                # -----------------------------
+                # TUMPUAN ROL VERTIKAL
+                # -----------------------------
+                elif rx == 0 and ry == 1:
+
+                    triangle = plt.Polygon(
+                        [
+                            (x-size, y-size),
+                            (x+size, y-size),
+                            (x, y)
+                        ],
+                        facecolor="black"
+                    )
+
+                    circle = plt.Circle(
+                        (x, y-size*1.3),
+                        size*0.35,
+                        facecolor="black"
+                    )
+
+                    ax.add_patch(triangle)
+
+                    circle = plt.Circle(
+                        (x, y - size * 1.3),
+                        size * 0.35,
+                        facecolor="black",
+                        edgecolor="black",
+                        zorder=2
+                    )
+
+                    ax.plot(x, y, "ro", zorder=3)
+
+                    ax.add_patch(circle)
+
+
+                # -----------------------------
+                # ROL HORIZONTAL
+                # -----------------------------
+                elif rx == 1 and ry == 0:
+
+                    triangle = plt.Polygon(
+                        [
+                            (x, y-size),
+                            (x, y+size),
+                            (x-size, y)
+                        ],
+                        facecolor="black"
+                    )
+
+                    circle = plt.Circle(
+                        (x, y - size * 1.3),
+                        size * 0.35,
+                        facecolor="black",
+                        edgecolor="black",
+                        zorder=2
+                    )
+
+                    ax.plot(x, y, "ro", zorder=3)
+
+                    ax.add_patch(triangle)
+
+                    circle = plt.Circle(
+                        (x-size*1.3, y),
+                        size*0.35,
+                        fill=False,
+                        color="black"
+                    )
+
+                    ax.add_patch(circle)
+
             # gambar beban
             for _,row in load_df.iterrows():
 
@@ -303,7 +420,6 @@ if uploaded:
 
     st.subheader("Geometri Rangka")
     st.pyplot(plot_geometry())
-
 
     # ========================================================
     # FUNGSI ANALISIS FEM
@@ -359,7 +475,11 @@ if uploaded:
         Kff = K[np.ix_(free, free)]
         Ff = F[free]
 
-        uf = np.linalg.solve(Kff, Ff)
+        try:
+            uf = np.linalg.solve(Kff, Ff)
+        except np.linalg.LinAlgError:
+            st.error("Matriks kekakuan singular. Struktur kemungkinan tidak stabil atau tumpuan tidak cukup.")
+            st.stop()
 
         u = np.zeros(2 * n_node)
         u[free] = uf
@@ -448,7 +568,7 @@ if uploaded:
             "node_i": elements[:, 0] + 1,
             "node_j": elements[:, 1] + 1,
             "Deformasi Aksial (mm)": deform * 1000,
-            "Gaya Aksial (N)": force,
+            "Gaya Aksial (kN)": force/1000,
             "Tegangan Aksial (MPa)": stress / 1e6
         })
 
@@ -456,12 +576,12 @@ if uploaded:
             element_result.style
             .format({
                 "Deformasi Aksial (mm)": "{:.4f}",
-                "Gaya Aksial (N)": "{:.4f}",
+                "Gaya Aksial (kN)": "{:.4f}",
                 "Tegangan Aksial (MPa)": "{:.4f}"
             })
             .set_properties(subset=["element", "node_i", "node_j"], **{"text-align": "center"})
             .set_properties(
-                subset=["Deformasi Aksial (mm)", "Gaya Aksial (N)", "Tegangan Aksial (MPa)"],
+                subset=["Deformasi Aksial (mm)", "Gaya Aksial (kN)", "Tegangan Aksial (MPa)"],
                 **{"text-align": "right"}
             )
             .set_table_styles(css)
@@ -747,12 +867,12 @@ if uploaded:
                     color="black"
                 )
 
-            ax.set_title("Diagram Gaya Batang (Tarik Biru, Tekan Merah)")
+            ax.set_title("Diagram Gaya Batang (Batang Tarik: Biru, Batang Tekan: Merah)")
             ax.axis("equal")
 
             return fig
         
-        st.subheader("Diagram Tarik dan Tekan")
+        st.subheader("Diagram Gaya Batang Stuktur Rangka")
         st.pyplot(plot_force())
 
         # ====================================================
@@ -790,7 +910,20 @@ if uploaded:
                 x1,y1 = new_nodes[n1]
                 x2,y2 = new_nodes[n2]
 
-                ax.plot([x1,x2],[y1,y2],"r",linewidth=3)
+            for i,(n1,n2) in enumerate(elements):
+
+                x1,y1 = new_nodes[n1]
+                x2,y2 = new_nodes[n2]
+
+                # warna berdasarkan gaya batang
+                color = "blue" if force[i] > 0 else "red"
+
+                ax.plot(
+                    [x1,x2],
+                    [y1,y2],
+                    color,
+                    linewidth=3
+                )
 
                 # label elemen
                 xm=(x1+x2)/2
@@ -804,10 +937,10 @@ if uploaded:
                 ax.plot(x,y,"ro")
                 ax.text(x+offset,y+offset,f"N{i+1}",color="red")
 
-            ax.set_title("Struktur Asli (Hitam) dan Deformasi (Merah)")
+            ax.set_title("Struktur Asli (Hitam) dan Deformasi Struktur (Merah)")
             ax.axis("equal")
 
             return fig
 
-        st.subheader("Diagram Deformasi")
+        st.subheader("Diagram Deformasi Struktur Rangka")
         st.pyplot(plot_deformation())
