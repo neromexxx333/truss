@@ -21,8 +21,8 @@ from pathlib import Path
 col1, col2 = st.columns([1,5])
 
 with col1:
-logo_path = Path(__file__).parent / "logo_ULM.png"
-st.image(str(logo_path), width=150)
+    logo_path = Path(__file__).parent / "logo_ULM.png"
+    st.image(str(logo_path), width=150)
 
 with col2:
     st.title("Analisis Rangka Batang FEM 2D")
