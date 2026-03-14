@@ -219,7 +219,29 @@ if uploaded:
     st.subheader("Data Tumpuan")
     st.markdown(styled_support.to_html(), unsafe_allow_html=True)
 
+# ============================================================
+# VALIDASI KESTABILAN STRUKTUR
+# ============================================================
 
+    def check_stability():
+
+        m = n_elem
+        j = n_node
+
+        r = 0
+        for _,row in support_df.iterrows():
+            r += int(row["x"]) + int(row["y"])
+
+        if m + r < 2*j:
+            st.error("Struktur tidak stabil karena m + r < 2j")
+            st.stop()
+
+        elif m + r == 2*j:
+            st.success("Struktur statis tertentu")
+
+        else:
+            st.info("Struktur statis tak tentu")
+            
     # ========================================================
     # MEMBENTUK VEKTOR GAYA GLOBAL
     # ========================================================
@@ -599,7 +621,6 @@ if uploaded:
         st.subheader("Gaya Aksial dan Tegangan Batang")
         st.markdown(styled_table.to_html(), unsafe_allow_html=True)
 
-
         # ====================================================
         # REAKSI TUMPUAN
         # ====================================================
@@ -633,6 +654,20 @@ if uploaded:
             reaction_data,
             columns=["node", "Rx (kN)", "Ry (kN)"]
         )
+
+        # ====================================================
+        # KESEIMBANGAN GAYA GLOBAL
+        # ====================================================
+
+        sumFx = np.sum(F[0::2]) + np.sum(R[0::2])
+        sumFy = np.sum(F[1::2]) + np.sum(R[1::2])
+
+        balance_row = pd.DataFrame(
+            [["ΣF", sumFx/1000, sumFy/1000]],
+            columns=["node", "Rx (kN)", "Ry (kN)"]
+        )
+
+        reaction_df = pd.concat([reaction_df, balance_row], ignore_index=True)
 
         styled_reaction = (
             reaction_df.style
