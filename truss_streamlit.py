@@ -9,7 +9,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+if "run_analysis" not in st.session_state:
+    st.session_state.run_analysis = False
+    
 # ============================================================
 # JUDUL APLIKASI
 # ============================================================
@@ -90,6 +92,22 @@ st.sidebar.markdown(
 
 uploaded = st.file_uploader("Upload file input data dalam format Excel:", type=["xlsx"])
 
+if "last_file" not in st.session_state:
+    st.session_state.last_file = None
+
+if uploaded is not None:
+
+    # jika file baru diupload maka reset kondisi analisis
+    if uploaded != st.session_state.last_file:
+
+        st.session_state.last_file = uploaded
+        st.session_state.run_analysis = False
+        st.session_state.izin_analisis = False
+
+        # reset hasil FEM
+        for key in ["u", "force", "stress", "deform", "R", "K"]:
+            if key in st.session_state:
+                del st.session_state[key]
 
 # ============================================================
 # PROGRAM DIJALANKAN SETELAH FILE DIUPLOAD
@@ -229,18 +247,53 @@ if uploaded:
         j = n_node
 
         r = 0
-        for _,row in support_df.iterrows():
+        for _, row in support_df.iterrows():
             r += int(row["x"]) + int(row["y"])
 
-        if m + r < 2*j:
-            st.error("Struktur tidak stabil karena m + r < 2j")
+        det = m + r - 2*j
+        stab = m - (2*j - 3)
+
+        if "izin_analisis" not in st.session_state:
+            st.session_state.izin_analisis = False
+
+        st.subheader("Evaluasi Struktur")
+
+        # ------------------------------------------------
+        # CEK KESTABILAN EKSTERNAL
+        # ------------------------------------------------
+
+        if det < 0:
+            st.error("Struktur tidak stabil secara eksternal (m + r < 2j)")
+            st.session_state.izin_analisis = False
             st.stop()
 
-        elif m + r == 2*j:
-            st.success("Struktur statis tertentu")
+        # ------------------------------------------------
+        # INFORMASI DETERMINASI
+        # ------------------------------------------------
 
+        if det == 0:
+            st.success("Struktur statis tertentu")
         else:
             st.info("Struktur statis tak tentu")
+
+        # ------------------------------------------------
+        # CEK STABILITAS INTERNAL
+        # ------------------------------------------------
+
+        if stab < 0:
+
+            st.warning("Sistem rangka tidak stabil (mekanisme)")
+
+            if st.checkbox("Tetap lanjutkan analisis"):
+                st.session_state.izin_analisis = True
+            else:
+                st.session_state.izin_analisis = False
+                st.stop()
+
+        else:
+            st.success("Struktur stabil")
+            st.session_state.izin_analisis = True
+
             
     # ========================================================
     # MEMBENTUK VEKTOR GAYA GLOBAL
@@ -443,6 +496,7 @@ if uploaded:
     st.subheader("Geometri Struktur Rangka")
     st.pyplot(plot_geometry())
 
+
     # ========================================================
     # FUNGSI ANALISIS FEM
     # ========================================================
@@ -560,9 +614,29 @@ if uploaded:
     </style>
     """, unsafe_allow_html=True)
 
+    # tombol analisis   
     if st.button("Jalankan Analisis"):
-        u, force, stress, deform, R, K = fem()
+        st.session_state.run_analysis = True
+    
+    # jalankan analisis jika status aktif
+    if st.session_state.run_analysis:
 
+        check_stability()
+
+        if st.session_state.get("izin_analisis", False):
+
+            u, force, stress, deform, R, K = fem()
+
+            st.session_state.u = u
+            st.session_state.force = force
+            st.session_state.stress = stress
+            st.session_state.deform = deform
+            st.session_state.R = R
+            st.session_state.K = K
+
+        if not st.session_state.get("izin_analisis", False):
+            st.stop()
+    
         # ====================================================
         # PERPINDAHAN NODE
         # ====================================================
@@ -659,8 +733,8 @@ if uploaded:
         # KESEIMBANGAN GAYA GLOBAL
         # ====================================================
 
-        sumFx = np.sum(F[0::2]) + np.sum(R[0::2])
-        sumFy = np.sum(F[1::2]) + np.sum(R[1::2])
+        sumFx = float(np.sum(F[0::2]) + np.sum(R[0::2]))
+        sumFy = float(np.sum(F[1::2]) + np.sum(R[1::2]))
 
         balance_row = pd.DataFrame(
             [["ΣF", sumFx/1000, sumFy/1000]],
@@ -948,11 +1022,6 @@ if uploaded:
                 new_nodes[i,1]+=u[2*i+1]*scale
 
             # struktur deformasi
-            for i,(n1,n2) in enumerate(elements):
-
-                x1,y1 = new_nodes[n1]
-                x2,y2 = new_nodes[n2]
-
             for i,(n1,n2) in enumerate(elements):
 
                 x1,y1 = new_nodes[n1]
