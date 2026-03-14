@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # JUDUL APLIKASI
 # ============================================================
 
-st.title("Analisis Rangka Batang FEM")
+st.title("Analisis Rangka Batang FEM 2D")
 
 st.markdown(
 "<h4 style='text-align:left'>by Ir. Darmansyah Tjitradi, MT., IPU</h4>",
