@@ -25,27 +25,41 @@ with col1:
     st.image(str(logo_path), width=150)
 
 with col2:
-    st.title("Analisis Rangka Batang FEM 2D")
-
     st.markdown(
-    "<h4 style='margin-bottom:0;'>Pengembang: Ir. Darmansyah Tjitradi, M.T., IPU</h4>",
-    unsafe_allow_html=True
-    )
-
-    st.markdown(
-    "<h4 style='margin-top:0;'>Program Studi Pendidikan Profesi Insinyur</h4>",
+    "<h2 style='margin-bottom:0;'>Analisis Rangka Batang FEM 2D</h2>",
     unsafe_allow_html=True
     )
     
     st.markdown(
-    "<h4 style='margin-top:0;'>Fakultas Teknik Universitas Lambung Mangkurat</h4>",
+    "<h5 style='margin-bottom:0;'>Pengembang: Ir. Darmansyah Tjitradi, M.T., IPU</h5>",
     unsafe_allow_html=True
     )
 
-st.markdown(
-"<h5 style='text-align:left'>====================================================</h5>",
-unsafe_allow_html=True
-)
+    st.markdown(
+    "<h5 style='margin-top:0;'>Program Studi Pendidikan Profesi Insinyur</h5>",
+    unsafe_allow_html=True
+    )
+    
+    st.markdown(
+    "<h5 style='margin-top:0;'>Fakultas Teknik Universitas Lambung Mangkurat</h5>",
+    unsafe_allow_html=True
+    )
+
+    st.markdown(
+    "<h5 style='text-align:left'>====================================================================</h5>",
+    unsafe_allow_html=True
+    )
+    
+    st.markdown("### Disclaimer")
+    st.warning(
+    """
+    - Aplikasi ini dikembangkan sebagai alat bantu pembelajaran dan penelitian dalam analisis struktur menggunakan Metode Elemen Hingga (Finite Element Method).
+    
+    - Hasil analisis harus diverifikasi lebih lanjut oleh insinyur profesional yang kompeten sebelum digunakan dalam perancangan struktur.
+    
+    - Pengguna bertanggung jawab sepenuhnya atas interpretasi dan penggunaan hasil analisis yang diperoleh dari aplikasi ini.
+    """
+    )
 
 # ============================================================
 # KONTROL SKALA DEFORMASI
