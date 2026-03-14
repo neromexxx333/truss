@@ -235,74 +235,74 @@ if uploaded:
         offset = 0.01 * max(xmax-xmin, ymax-ymin)
         scale_arrow = 0.08 * max(xmax-xmin, ymax-ymin)
 
-            # gambar batang
-            for i,(n1,n2) in enumerate(elements):
+        # gambar batang
+        for i,(n1,n2) in enumerate(elements):
 
-                x=[nodes[n1][0],nodes[n2][0]]
-                y=[nodes[n1][1],nodes[n2][1]]
+            x=[nodes[n1][0],nodes[n2][0]]
+            y=[nodes[n1][1],nodes[n2][1]]
 
-                ax.plot(x,y,"k")
+            ax.plot(x,y,"k")
 
-                xm=(x[0]+x[1])/2
-                ym=(y[0]+y[1])/2
+            xm=(x[0]+x[1])/2
+            ym=(y[0]+y[1])/2
 
-                ax.text(xm,ym+offset,f"E{i+1}",color="blue",ha="center")
+            ax.text(xm,ym+offset,f"E{i+1}",color="blue",ha="center")
 
             # gambar node
-            for i,(x,y) in enumerate(nodes):
+        for i,(x,y) in enumerate(nodes):
 
-                ax.plot(x,y,"ro")
-                ax.text(x+offset,y+offset,f"N{i+1}",color="red")
+            ax.plot(x,y,"ro")
+            ax.text(x+offset,y+offset,f"N{i+1}",color="red")
 
             # gambar beban
-            for _,row in load_df.iterrows():
+        for _,row in load_df.iterrows():
 
-                node=int(row["node"])-1
-                fx=row["fx"]
-                fy=row["fy"]
+            node=int(row["node"])-1
+            fx=row["fx"]
+            fy=row["fy"]
 
-                x,y=nodes[node]
+            x,y=nodes[node]
 
-                if abs(fx)>0:
-                    direction=np.sign(fx)
+            if abs(fx)>0:
+                direction=np.sign(fx)
 
-                    ax.arrow(
-                        x,y,
-                        direction*scale_arrow,0,
-                        head_width=0.04*scale_arrow,
-                        color="green",
-                        length_includes_head=True
-                    )
+                ax.arrow(
+                    x,y,
+                    direction*scale_arrow,0,
+                    head_width=0.04*scale_arrow,
+                    color="green",
+                    length_includes_head=True
+                )
 
-                    ax.text(
-                        x+direction*scale_arrow,
-                        y,
-                        f"{fx/1000:.1f} kN",
-                        color="green"
-                    )
+                ax.text(
+                    x+direction*scale_arrow,
+                    y,
+                    f"{fx/1000:.1f} kN",
+                    color="green"
+                )
 
-                if abs(fy)>0:
-                    direction=np.sign(fy)
+            if abs(fy)>0:
+                direction=np.sign(fy)
 
-                    ax.arrow(
-                        x,y,
-                        0,direction*scale_arrow,
-                        head_width=0.04*scale_arrow,
-                        color="green",
-                        length_includes_head=True
-                    )
+                ax.arrow(
+                    x,y,
+                    0,direction*scale_arrow,
+                    head_width=0.04*scale_arrow,
+                    color="green",
+                    length_includes_head=True
+                )
 
-                    ax.text(
-                        x,
-                        y+direction*scale_arrow,
-                        f"{fy/1000:.1f} kN",
-                        color="green"
-                    )
+                ax.text(
+                    x,
+                    y+direction*scale_arrow,
+                    f"{fy/1000:.1f} kN",
+                    color="green"
+                )
 
-            ax.set_title("Geometri Rangka dan Beban Terpusat")
-            ax.axis("equal")
+        ax.set_title("Geometri Rangka dan Beban Terpusat")
+        ax.axis("equal")
 
-            return fig
+        return fig
 
 
     st.subheader("Geometri Rangka")
