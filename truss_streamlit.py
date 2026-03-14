@@ -78,7 +78,7 @@ scale = st.sidebar.slider(
 # UPLOAD FILE EXCEL
 # ============================================================
 
-uploaded = st.file_uploader("Upload file Excel", type=["xlsx"])
+uploaded = st.file_uploader("Upload file input data dalam format Excel:", type=["xlsx"])
 
 
 # ============================================================
