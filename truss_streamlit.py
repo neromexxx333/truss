@@ -72,12 +72,15 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
+if "scale" not in st.session_state:
+    st.session_state.scale = 25
+    
 scale = st.sidebar.slider(
     " ",
     min_value=1,
     max_value=1000,
-    value=25,
-    step=1
+    step=1,
+    key="scale"
 )
 
 st.sidebar.markdown(
@@ -104,6 +107,10 @@ if uploaded is not None:
         st.session_state.run_analysis = False
         st.session_state.izin_analisis = False
 
+        # reset skala deformasi ke default
+        if "scale" in st.session_state:
+            del st.session_state["scale"] 
+        
         # reset hasil FEM
         for key in ["u", "force", "stress", "deform", "R", "K"]:
             if key in st.session_state:
@@ -1049,7 +1056,7 @@ if uploaded:
                 ax.plot(x,y,"ro")
                 ax.text(x+offset,y+offset,f"N{i+1}",color="red")
 
-            ax.set_title("Struktur Asli (Hitam) dan Deformasi Struktur (Merah)")
+            ax.set_title("Diagram Deformasi Struktur Rangka")
             ax.axis("equal")
 
             return fig
