@@ -50,7 +50,7 @@ with col2:
     unsafe_allow_html=True
     )
     
-    st.markdown("### Disclaimer")
+    st.markdown("### Disclaimer:")
     st.warning(
     """
     - Aplikasi ini dikembangkan sebagai alat bantu pembelajaran dan penelitian dalam analisis struktur menggunakan Metode Elemen Hingga (Finite Element Method).
