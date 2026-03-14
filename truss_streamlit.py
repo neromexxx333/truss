@@ -14,18 +14,32 @@ import matplotlib.pyplot as plt
 # JUDUL APLIKASI
 # ============================================================
 
-st.title("Analisis Rangka Batang FEM 2D")
+# ============================================================
+# HEADER DENGAN LOGO
+# ============================================================
+
+col1, col2 = st.columns([1,5])
+
+with col1:
+    st.image("logo.png", width=150)
+
+with col2:
+    st.title("Analisis Rangka Batang FEM 2D")
+
+    st.markdown(
+    "<h4 style='margin-bottom:0;'>by Ir. Darmansyah Tjitradi, MT., IPU</h4>",
+    unsafe_allow_html=True
+    )
+
+    st.markdown(
+    "<h4 style='margin-top:0;'>Dosen Fakultas Teknik Universitas Lambung Mangkurat</h4>",
+    unsafe_allow_html=True
+    )
 
 st.markdown(
-"<h4 style='text-align:left'>by Ir. Darmansyah Tjitradi, MT., IPU</h4>",
+"<h5 style='text-align:left'>====================================================</h5>",
 unsafe_allow_html=True
 )
-
-st.markdown(
-"<h5 style='text-align:left'>==========================================================</h5>",
-unsafe_allow_html=True
-)
-
 
 # ============================================================
 # KONTROL SKALA DEFORMASI
