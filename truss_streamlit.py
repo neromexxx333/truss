@@ -1,5 +1,7 @@
 # ============================================================
-# APLIKASI ANALISIS RANGKA BATANG FEM 2D
+# APLIKASI ANALISIS STRUKTUR RANGKA BATANG FEM 2D
+# Version 1.0
+# Metode Matriks Kekakuan Langsung
 # Menggunakan Python + Streamlit
 # Penulis : Ir. Darmansyah Tjitradi, MT., IPU
 # ============================================================
@@ -28,7 +30,7 @@ with col1:
 with col2:
     
     st.markdown(
-    "<h2 style='margin-bottom:0;'>Analisis Rangka Batang FEM 2D</h2>",
+    "<h2 style='margin-bottom:0;'>Analisis Struktur Rangka Batang 2D (Versi 1.0)</h2>",
     unsafe_allow_html=True
     )
     
@@ -78,7 +80,7 @@ if "scale" not in st.session_state:
 scale = st.sidebar.slider(
     " ",
     min_value=1,
-    max_value=1000,
+    max_value=5000,
     step=1,
     key="scale"
 )
@@ -940,58 +942,73 @@ if uploaded:
 # DIAGRAM GAYA BATANG + NOMOR NODE
 # ====================================================
 
+        from matplotlib.lines import Line2D
+
         def plot_force():
 
             fig, ax = plt.subplots()
 
-            xmin, xmax = nodes[:, 0].min(), nodes[:, 0].max()
-            ymin, ymax = nodes[:, 1].min(), nodes[:, 1].max()
+            xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
+            ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
 
-            offset = 0.01 * max(xmax - xmin, ymax - ymin)
+            offset = 0.02 * max(xmax-xmin, ymax-ymin)
 
-            # -----------------------------------------------
-            # gambar batang dengan warna tarik dan tekan
-            # -----------------------------------------------
+            max_force = np.max(np.abs(force))
 
-            for i, (n1, n2) in enumerate(elements):
+            t_min = 1
+            t_max = 10
 
-                x1, y1 = nodes[n1]
-                x2, y2 = nodes[n2]
+            for i,(n1,n2) in enumerate(elements):
 
-                color = "blue" if force[i] > 0 else "red"
+                x1,y1 = nodes[n1]
+                x2,y2 = nodes[n2]
 
-                ax.plot([x1, x2], [y1, y2], color, linewidth=3)
+                N = force[i]
 
-                xm = (x1 + x2) / 2
-                ym = (y1 + y2) / 2
+                color = "blue" if N > 0 else "red"
 
-                L = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-                nx = -(y2 - y1) / L
-                ny = (x2 - x1) / L
+                thickness = t_min + (abs(N)/max_force)*(t_max-t_min)
+
+                ax.plot(
+                    [x1,x2],
+                    [y1,y2],
+                    color=color,
+                    linewidth=thickness
+                )
+
+                xm = (x1+x2)/2
+                ym = (y1+y2)/2
 
                 ax.text(
-                    xm + offset * nx,
-                    ym + offset * ny,
-                    f"{force[i] / 1000:.1f} kN",
+                    xm,
+                    ym + offset,
+                    f"{N/1000:.1f} kN",
                     ha="center"
                 )
 
-            # -----------------------------------------------
             # gambar node
-            # -----------------------------------------------
+            for i,(x,y) in enumerate(nodes):
 
-            for i, (x, y) in enumerate(nodes):
-
-                ax.plot(x, y, "ko")
+                ax.plot(x,y,"ko")
 
                 ax.text(
                     x + offset,
                     y + offset,
-                    f"N{i+1}",
-                    color="black"
+                    f"N{i+1}"
                 )
 
-            ax.set_title("Diagram Gaya Batang (Batang Tarik: Biru, Batang Tekan: Merah)")
+            # ---------------------------------------
+            # LEGENDA
+            # ---------------------------------------
+
+            legend_elements = [
+                Line2D([0],[0], color='blue', lw=4, label='Gaya Tarik'),
+                Line2D([0],[0], color='red', lw=4, label='Gaya Tekan')
+            ]
+
+            ax.legend(handles=legend_elements, loc="upper right")
+
+            ax.set_title("Diagram Gaya Aksial Batang")
             ax.axis("equal")
 
             return fig
@@ -1063,3 +1080,90 @@ if uploaded:
 
         st.subheader("Diagram Deformasi Struktur Rangka")
         st.pyplot(plot_deformation())
+        import matplotlib.animation as animation
+
+        # ====================================================
+        # DIAGRAM ANIMASI DEFORMASI
+        # ====================================================
+
+        time_factor = st.sidebar.slider(
+            "Waktu Animasi Deformasi",
+            min_value=0.0,
+            max_value=1.0,
+            value=1.0,
+            step=0.01
+        )
+
+        import time        
+        placeholder = st.empty()
+
+        while True:
+
+            for t in np.linspace(0,1,40):
+
+                fig, ax = plt.subplots()
+
+                new_nodes = np.array(nodes, dtype=float)
+
+                for i in range(n_node):
+
+                    new_nodes[i,0] += u[2*i] * scale * t
+                    new_nodes[i,1] += u[2*i+1] * scale * t
+
+                # ---------------------------------------
+                # STRUKTUR ASLI
+                # ---------------------------------------
+
+                for (n1,n2) in elements:
+
+                    ax.plot(
+                        [nodes[n1][0], nodes[n2][0]],
+                        [nodes[n1][1], nodes[n2][1]],
+                        "k--",
+                        linewidth=1
+                    )
+
+                # ---------------------------------------
+                # STRUKTUR DEFORMASI
+                # ---------------------------------------
+
+                for i,(n1,n2) in enumerate(elements):
+
+                    x1,y1 = new_nodes[n1]
+                    x2,y2 = new_nodes[n2]
+
+                    color = "blue" if force[i] > 0 else "red"
+
+                    ax.plot(
+                        [x1,x2],
+                        [y1,y2],
+                        color=color,
+                        linewidth=3
+                    )
+
+                # ---------------------------------------
+                # NODE DAN NOMOR NODE YANG BERGERAK
+                # ---------------------------------------
+
+                offset = 0.01 * max(
+                    nodes[:,0].max()-nodes[:,0].min(),
+                    nodes[:,1].max()-nodes[:,1].min()
+                )
+
+                for i,(x,y) in enumerate(new_nodes):
+
+                    ax.plot(x,y,"ro")
+
+                    ax.text(
+                        x + offset,
+                        y + offset,
+                        f"N{i+1}",
+                        color="red"
+                    )
+
+                ax.set_title("Animasi Deformasi Struktur")
+                ax.axis("equal")
+
+                placeholder.pyplot(fig)
+
+                time.sleep(0.05)
