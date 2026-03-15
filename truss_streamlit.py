@@ -265,7 +265,7 @@ if uploaded:
         if "izin_analisis" not in st.session_state:
             st.session_state.izin_analisis = False
 
-        st.subheader("Evaluasi Struktur")
+        st.subheader("Evaluasi Struktur Rangka")
 
         # ------------------------------------------------
         # CEK KESTABILAN EKSTERNAL
@@ -498,6 +498,14 @@ if uploaded:
 
             ax.set_title("Geometri Struktur Rangka")
             ax.axis("equal")
+
+            # tambahan ruang kiri kanan atas bawah
+            margin_x = 0.2 * (xmax - xmin)
+            margin_y = 0.2 * (ymax - ymin)
+            
+            # batas grafik
+            ax.set_xlim(xmin - margin_x, xmax + margin_x)
+            ax.set_ylim(ymin - margin_y, ymax + margin_y)    
 
             return fig
 
@@ -836,6 +844,14 @@ if uploaded:
             ax.set_title("Reaksi Tumpuan Struktur Rangka")
             ax.axis("equal")
 
+            # tambahan ruang kiri kanan atas bawah
+            margin_x = 0.35 * (xmax - xmin)
+            margin_y = 0.35 * (ymax - ymin)
+            
+            # batas grafik
+            ax.set_xlim(xmin - margin_x, xmax + margin_x)
+            ax.set_ylim(ymin - margin_y, ymax + margin_y)    
+            
             return fig
 
         st.subheader("Reaksi Tumpuan Struktur Rangka")
@@ -932,6 +948,14 @@ if uploaded:
             ax.set_title("Reaksi Tumpuan Struktur Rangka (Sumbu Global)")
             ax.axis("equal")
 
+            # tambahan ruang kiri kanan atas bawah
+            margin_x = 0.35 * (xmax - xmin)
+            margin_y = 0.35 * (ymax - ymin)
+            
+            # batas grafik
+            ax.set_xlim(xmin - margin_x, xmax + margin_x)
+            ax.set_ylim(ymin - margin_y, ymax + margin_y)       
+            
             return fig
 
         st.subheader("Reaksi Tumpuan Struktur Rangka (Sumbu Global)")
@@ -1011,6 +1035,14 @@ if uploaded:
             ax.set_title("Diagram Gaya Aksial Batang")
             ax.axis("equal")
 
+            # tambahan ruang kiri kanan atas bawah
+            margin_x = 0.1 * (xmax - xmin)
+            margin_y = 0.1 * (ymax - ymin)
+            
+            # batas grafik
+            ax.set_xlim(xmin - margin_x, xmax + margin_x)
+            ax.set_ylim(ymin - margin_y, ymax + margin_y)    
+
             return fig
         
         st.subheader("Diagram Gaya Batang Stuktur Rangka")
@@ -1076,18 +1108,54 @@ if uploaded:
             ax.set_title("Diagram Deformasi Struktur Rangka")
             ax.axis("equal")
 
+            # batas deformasi
+            xmin_def = new_nodes[:,0].min()
+            xmax_def = new_nodes[:,0].max()
+            ymin_def = new_nodes[:,1].min()
+            ymax_def = new_nodes[:,1].max()
+
+            # gabungan struktur asli dan deformasi
+            xmin_all = min(xmin,xmin_def)
+            xmax_all = max(xmax,xmax_def)
+
+            ymin_all = min(ymin,ymin_def)
+            ymax_all = max(ymax,ymax_def)
+
+            # margin grafik
+            margin_x = 0.1*(xmax_all-xmin_all)
+            margin_y = 0.1*(ymax_all-ymin_all)
+
+            ax.set_xlim(xmin_all-margin_x, xmax_all+margin_x)
+            ax.set_ylim(ymin_all-margin_y, ymax_all+margin_y)   
+
             return fig
 
         st.subheader("Diagram Deformasi Struktur Rangka")
         st.pyplot(plot_deformation())
-        import matplotlib.animation as animation
 
         # ====================================================
         # DIAGRAM ANIMASI DEFORMASI
         # ====================================================
+        import matplotlib.animation as animation
+
+        xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
+        ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
+
+        st.sidebar.markdown(
+            """
+            <div style="
+                text-align:center;
+                font-size:30px;
+                font-weight:bold;
+                margin-bottom:10px;">
+                Waktu Animasi Deformasi
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         time_factor = st.sidebar.slider(
-            "Waktu Animasi Deformasi",
+            "",
             min_value=0.0,
             max_value=1.0,
             value=1.0,
@@ -1106,9 +1174,24 @@ if uploaded:
                 new_nodes = np.array(nodes, dtype=float)
 
                 for i in range(n_node):
-
                     new_nodes[i,0] += u[2*i] * scale * t
                     new_nodes[i,1] += u[2*i+1] * scale * t
+
+                xmin_def = new_nodes[:,0].min()
+                xmax_def = new_nodes[:,0].max()
+                ymin_def = new_nodes[:,1].min()
+                ymax_def = new_nodes[:,1].max()
+
+                xmin_all = min(xmin, xmin_def)
+                xmax_all = max(xmax, xmax_def)
+                ymin_all = min(ymin, ymin_def)
+                ymax_all = max(ymax, ymax_def)
+
+                margin_x = 0.1 * (xmax_all - xmin_all)
+                margin_y = 0.1 * (ymax_all - ymin_all)
+
+                ax.set_xlim(xmin_all - margin_x, xmax_all + margin_x)
+                ax.set_ylim(ymin_all - margin_y, ymax_all + margin_y)   
 
                 # ---------------------------------------
                 # STRUKTUR ASLI
@@ -1161,7 +1244,7 @@ if uploaded:
                         color="red"
                     )
 
-                ax.set_title("Animasi Deformasi Struktur")
+                ax.set_title("Animasi Deformasi Struktur Rangka")
                 ax.axis("equal")
 
                 placeholder.pyplot(fig)
