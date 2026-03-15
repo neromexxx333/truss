@@ -10,6 +10,8 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore")
 
 if "run_analysis" not in st.session_state:
     st.session_state.run_analysis = False
@@ -1179,9 +1181,7 @@ if uploaded:
         import time        
         placeholder = st.empty()
 
-        while True:
-
-            for t in np.linspace(0,1,40):
+        for t in np.linspace(0,1,40):
 
                 fig, ax = plt.subplots()
 
@@ -1268,5 +1268,5 @@ if uploaded:
 
 
                 placeholder.pyplot(fig)
-
+                plt.close(fig)
                 time.sleep(0.05)
