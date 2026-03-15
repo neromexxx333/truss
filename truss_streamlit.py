@@ -623,16 +623,30 @@ if uploaded:
 
     st.markdown("""
     <style>
+
+    /* tombol */
     div.stButton > button {
-        font-size: 24px;
-        font-weight: bold;
-        padding: 14px 28px;
+        background-color:#4da6ff !important;
+        width:100% !important;
+        border-radius:12px !important;
     }
+
+    /* teks tombol */
+    div.stButton > button p {
+        font-size:60px !important;
+        font-weight:bold !important;
+    }
+
+    /* hover */
+    div.stButton > button:hover {
+        background-color:#3399ff !important;
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
     # tombol analisis   
-    if st.button("Jalankan Analisis"):
+    if st.button("▶ JALANKAN ANALISIS", use_container_width=True):
         st.session_state.run_analysis = True
     
     # jalankan analisis jika status aktif
@@ -1187,11 +1201,22 @@ if uploaded:
                 ymin_all = min(ymin, ymin_def)
                 ymax_all = max(ymax, ymax_def)
 
-                margin_x = 0.1 * (xmax_all - xmin_all)
-                margin_y = 0.1 * (ymax_all - ymin_all)
+                # offset label
+                offset = 0.01 * (xmax_all - xmin_all)
 
-                ax.set_xlim(xmin_all - margin_x, xmax_all + margin_x)
-                ax.set_ylim(ymin_all - margin_y, ymax_all + margin_y)   
+                # posisi label paling kanan
+                label_xmax = np.max(new_nodes[:,0] + offset)
+
+                # batas kiri kanan mengikuti label
+                xmin_plot = xmin_all - 0.08 * (xmax_all - xmin_all)
+                xmax_plot = label_xmax + 0.09 * (xmax_all - xmin_all)
+
+                ax.axis("equal")
+                ax.set_xlim(xmin_plot, xmax_plot)
+
+                # margin vertikal
+                margin_y = 0.2 * (ymax_all - ymin_all)
+                ax.set_ylim(ymin_all - margin_y, ymax_all + margin_y)
 
                 # ---------------------------------------
                 # STRUKTUR ASLI
@@ -1228,11 +1253,6 @@ if uploaded:
                 # NODE DAN NOMOR NODE YANG BERGERAK
                 # ---------------------------------------
 
-                offset = 0.01 * max(
-                    nodes[:,0].max()-nodes[:,0].min(),
-                    nodes[:,1].max()-nodes[:,1].min()
-                )
-
                 for i,(x,y) in enumerate(new_nodes):
 
                     ax.plot(x,y,"ro")
@@ -1243,9 +1263,9 @@ if uploaded:
                         f"N{i+1}",
                         color="red"
                     )
-
+                
                 ax.set_title("Animasi Deformasi Struktur Rangka")
-                ax.axis("equal")
+
 
                 placeholder.pyplot(fig)
 
