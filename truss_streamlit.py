@@ -128,7 +128,7 @@ if "scale" not in st.session_state:
 scale = st.sidebar.number_input(
     "Masukkan nilai skala deformasi:",
     min_value=1,
-    max_value=5000,
+    max_value=100000,
     step=1,
     key="scale"
 )
@@ -1140,7 +1140,8 @@ if uploaded:
             xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
             ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
 
-            offset = 0.02 * max(xmax-xmin, ymax-ymin)
+            offset = 0.012 * max(xmax-xmin, ymax-ymin)
+            node_offset = 0.006 * max(xmax-xmin, ymax-ymin)
 
             max_force = np.max(np.abs(force))
 
@@ -1171,8 +1172,9 @@ if uploaded:
                 ax.text(
                     xm,
                     ym + offset,
-                    f"{N/1000:.1f} kN",
-                    ha="center"
+                    f"{N/1000:.1f}",
+                    ha="center",
+                    fontsize=8
                 )
 
             # gambar node
@@ -1181,9 +1183,10 @@ if uploaded:
                 ax.plot(x,y,"ko")
 
                 ax.text(
-                    x + offset,
-                    y + offset,
-                    f"N{i+1}"
+                    x + node_offset,
+                    y + node_offset,
+                    f"N{i+1}",
+                    fontsize=8
                 )
 
             # ---------------------------------------
@@ -1197,7 +1200,7 @@ if uploaded:
 
             ax.legend(handles=legend_elements, loc="upper right")
 
-            ax.set_title("Diagram Gaya Aksial Batang")
+            ax.set_title("Diagram Gaya Aksial Stuktur Rangka")
             ax.axis("equal")
 
             # tambahan ruang kiri kanan atas bawah
@@ -1210,7 +1213,7 @@ if uploaded:
 
             return fig
         
-        st.subheader("Diagram Gaya Batang Stuktur Rangka")
+        st.subheader("Diagram Gaya Aksial Stuktur Rangka")
         render_figure(plot_force())
 
 # ====================================================
@@ -1227,6 +1230,7 @@ if uploaded:
             ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
 
             offset = 0.02 * max(xmax-xmin, ymax-ymin)
+            node_offset = 0.008 * max(xmax-xmin, ymax-ymin)
 
             max_stress = np.max(np.abs(stress))
 
@@ -1257,8 +1261,9 @@ if uploaded:
                 ax.text(
                     xm,
                     ym + offset,
-                    f"{sig:.2f} MPa",
-                    ha="center"
+                    f"{sig:.2f}",
+                    ha="center",
+                    fontsize=8
                 )
 
             # gambar node
@@ -1267,9 +1272,10 @@ if uploaded:
                 ax.plot(x,y,"ko")
 
                 ax.text(
-                    x + offset,
-                    y + offset,
-                    f"N{i+1}"
+                    x + node_offset,
+                    y + node_offset,
+                    f"N{i+1}",
+                    fontsize=8
                 )
 
             # legenda
@@ -1280,7 +1286,7 @@ if uploaded:
 
             ax.legend(handles=legend_elements, loc="upper right")
 
-            ax.set_title("Diagram Tegangan Aksial Batang")
+            ax.set_title("Diagram Tegangan Aksial Struktur Rangka")
             ax.axis("equal")
 
             margin_x = 0.1 * (xmax - xmin)
@@ -1291,7 +1297,7 @@ if uploaded:
 
             return fig
 
-        st.subheader("Diagram Tegangan Aksial Batang Struktur Rangka")
+        st.subheader("Diagram Tegangan Aksial Struktur Rangka")
         render_figure(plot_stress())
 
         # ====================================================
