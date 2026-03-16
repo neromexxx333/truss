@@ -95,6 +95,33 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown(
+    """
+    <style>
+    section[data-testid="stSidebar"] [data-testid="stNumberInput"] input,
+    section[data-testid="stSidebar"] [data-testid="stNumberInput"] input[type="number"],
+    section[data-testid="stSidebar"] [data-testid="stNumberInput"] input[type="text"] {
+        font-size: 30px !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"],
+    section[data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="base-input"] {
+        min-height: 58px !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stNumberInput"] button {
+        font-size: 30px !important;
+        font-weight: 700 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 if "scale" not in st.session_state:
     st.session_state.scale = 25
     
@@ -105,6 +132,51 @@ scale = st.sidebar.number_input(
     step=1,
     key="scale"
 )
+
+with st.sidebar:
+    components.html(
+        """
+        <script>
+        const applyScaleStyle = () => {
+            const doc = window.parent.document;
+            const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+            if (!sidebar) return;
+
+            const container = sidebar.querySelector('[data-testid="stNumberInput"]');
+            if (!container) return;
+
+            container.querySelectorAll('input').forEach((input) => {
+                input.style.fontSize = '30px';
+                input.style.fontWeight = '700';
+                input.style.textAlign = 'center';
+                input.style.lineHeight = '1.2';
+                input.style.paddingLeft = '0';
+                input.style.paddingRight = '0';
+                input.style.webkitTextFillColor = 'currentColor';
+            });
+
+            container.querySelectorAll('button').forEach((button) => {
+                button.style.fontSize = '30px';
+                button.style.fontWeight = '700';
+            });
+
+            const wrappers = container.querySelectorAll('[data-baseweb="input"], [data-baseweb="base-input"]');
+            wrappers.forEach((wrapper) => {
+                wrapper.style.minHeight = '58px';
+            });
+        };
+
+        applyScaleStyle();
+        new MutationObserver(applyScaleStyle).observe(window.parent.document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true
+        });
+        </script>
+        """,
+        height=0,
+        scrolling=False
+    )
 
 
 # ============================================================
