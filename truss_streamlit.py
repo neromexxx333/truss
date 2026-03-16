@@ -620,6 +620,26 @@ if uploaded:
 
 
     # ========================================================
+    # KONTROL HIGHLIGHT TABEL OUTPUT
+    # ========================================================
+    def highlight_max_with_id(df, cols_check, id_col):
+
+        styles = pd.DataFrame("", index=df.index, columns=df.columns)
+
+        for col in cols_check:
+
+            max_val = np.max(np.abs(df[col]))
+
+            idx = df.index[np.abs(df[col]) == max_val]
+
+            for i in idx:
+
+                styles.loc[i, col] = "background-color:#ffe6ea; color:#b00000; font-weight:bold; font-size:18px"
+                styles.loc[i, id_col] = "background-color:#ffe6ea; color:#b00000; font-weight:bold; font-size:18px"
+
+        return styles
+
+    # ========================================================
     # MENJALANKAN ANALISIS
     # ========================================================
 
@@ -686,13 +706,19 @@ if uploaded:
         styled_disp = (
             disp_df.style
             .format({"ux (mm)": "{:.4f}", "uy (mm)": "{:.4f}"})
+            .apply(
+                highlight_max_with_id,
+                cols_check=["ux (mm)", "uy (mm)"],
+                id_col="node",
+                axis=None
+            )
             .set_properties(subset=["node"], **{"text-align": "center"})
             .set_properties(subset=["ux (mm)", "uy (mm)"], **{"text-align": "right"})
             .set_table_styles(css)
             .hide(axis="index")
         )
 
-        st.subheader("Perpindahan Node")
+        st.subheader("Hasil Perpindahan Titik Kumpul")
         st.markdown(styled_disp.to_html(), unsafe_allow_html=True)
 
 
@@ -716,16 +742,33 @@ if uploaded:
                 "Gaya Aksial (kN)": "{:.4f}",
                 "Tegangan Aksial (MPa)": "{:.4f}"
             })
-            .set_properties(subset=["element", "node_i", "node_j"], **{"text-align": "center"})
+            .apply(
+                highlight_max_with_id,
+                cols_check=[
+                    "Deformasi Aksial (mm)",
+                    "Gaya Aksial (kN)",
+                    "Tegangan Aksial (MPa)"
+                ],
+                id_col="element",
+                axis=None
+            )
             .set_properties(
-                subset=["Deformasi Aksial (mm)", "Gaya Aksial (kN)", "Tegangan Aksial (MPa)"],
+                subset=["element","node_i","node_j"],
+                **{"text-align": "center"}
+            )
+            .set_properties(
+                subset=[
+                    "Deformasi Aksial (mm)",
+                    "Gaya Aksial (kN)",
+                    "Tegangan Aksial (MPa)"
+                ],
                 **{"text-align": "right"}
             )
             .set_table_styles(css)
             .hide(axis="index")
         )
 
-        st.subheader("Gaya Aksial dan Tegangan Batang")
+        st.subheader("Hasil Deformasi Aksial, Gaya Aksial dan Tegangan Aksial")
         st.markdown(styled_table.to_html(), unsafe_allow_html=True)
 
         # ====================================================
@@ -782,13 +825,19 @@ if uploaded:
                 "Rx (kN)": "{:.4f}",
                 "Ry (kN)": "{:.4f}"
             })
+            .apply(
+                highlight_max_with_id,
+                cols_check=["Rx (kN)", "Ry (kN)"],
+                id_col="node",
+                axis=None
+            )
             .set_properties(subset=["node"], **{"text-align": "center"})
             .set_properties(subset=["Rx (kN)", "Ry (kN)"], **{"text-align": "right"})
             .set_table_styles(css)
             .hide(axis="index")
         )
 
-        st.subheader("Reaksi Tumpuan")
+        st.subheader("Hasil Reaksi Tumpuan")
         st.markdown(styled_reaction.to_html(), unsafe_allow_html=True)
 
 # ====================================================
@@ -1063,6 +1112,87 @@ if uploaded:
         
         st.subheader("Diagram Gaya Batang Stuktur Rangka")
         st.pyplot(plot_force())
+
+# ====================================================
+# DIAGRAM TEGANGAN AKSIAL BATANG
+# ====================================================
+
+        from matplotlib.lines import Line2D
+
+        def plot_stress():
+
+            fig, ax = plt.subplots()
+
+            xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
+            ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
+
+            offset = 0.02 * max(xmax-xmin, ymax-ymin)
+
+            max_stress = np.max(np.abs(stress))
+
+            t_min = 1
+            t_max = 10
+
+            for i,(n1,n2) in enumerate(elements):
+
+                x1,y1 = nodes[n1]
+                x2,y2 = nodes[n2]
+
+                sig = stress[i] / 1e6   # MPa
+
+                color = "blue" if sig > 0 else "red"
+
+                thickness = t_min + (abs(sig)/ (max_stress/1e6))*(t_max-t_min)
+
+                ax.plot(
+                    [x1,x2],
+                    [y1,y2],
+                    color=color,
+                    linewidth=thickness
+                )
+
+                xm = (x1+x2)/2
+                ym = (y1+y2)/2
+
+                ax.text(
+                    xm,
+                    ym + offset,
+                    f"{sig:.2f} MPa",
+                    ha="center"
+                )
+
+            # gambar node
+            for i,(x,y) in enumerate(nodes):
+
+                ax.plot(x,y,"ko")
+
+                ax.text(
+                    x + offset,
+                    y + offset,
+                    f"N{i+1}"
+                )
+
+            # legenda
+            legend_elements = [
+                Line2D([0],[0], color='blue', lw=4, label='Tegangan Tarik'),
+                Line2D([0],[0], color='red', lw=4, label='Tegangan Tekan')
+            ]
+
+            ax.legend(handles=legend_elements, loc="upper right")
+
+            ax.set_title("Diagram Tegangan Aksial Batang")
+            ax.axis("equal")
+
+            margin_x = 0.1 * (xmax - xmin)
+            margin_y = 0.1 * (ymax - ymin)
+
+            ax.set_xlim(xmin - margin_x, xmax + margin_x)
+            ax.set_ylim(ymin - margin_y, ymax + margin_y)
+
+            return fig
+
+        st.subheader("Diagram Tegangan Aksial Batang Struktur Rangka")
+        st.pyplot(plot_stress())
 
         # ====================================================
         # DIAGRAM DEFORMASI
