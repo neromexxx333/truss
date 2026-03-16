@@ -6,15 +6,34 @@
 # Penulis : Ir. Darmansyah Tjitradi, MT., IPU
 # ============================================================
 
-import streamlit as st
+from io import BytesIO
+import hashlib
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings("ignore")
+import streamlit as st
+import streamlit.components.v1 as components
 
 if "run_analysis" not in st.session_state:
     st.session_state.run_analysis = False
+
+
+@st.cache_data(show_spinner=False, max_entries=2)
+def load_input_data(file_bytes):
+    with pd.ExcelFile(BytesIO(file_bytes), engine="openpyxl") as workbook:
+        node_df = pd.read_excel(workbook, sheet_name="nodes")
+        elem_df = pd.read_excel(workbook, sheet_name="elements")
+        load_df = pd.read_excel(workbook, sheet_name="loads")
+        support_df = pd.read_excel(workbook, sheet_name="tumpuan")
+
+    return node_df, elem_df, load_df, support_df
+
+
+def render_figure(fig):
+    st.pyplot(fig)
+    plt.close(fig)
     
 # ============================================================
 # JUDUL APLIKASI
@@ -99,15 +118,20 @@ st.sidebar.markdown(
 
 uploaded = st.file_uploader("Upload file input data dalam format Excel:", type=["xlsx"])
 
-if "last_file" not in st.session_state:
-    st.session_state.last_file = None
+if "last_file_hash" not in st.session_state:
+    st.session_state.last_file_hash = None
+
+uploaded_bytes = None
+uploaded_hash = None
 
 if uploaded is not None:
+    uploaded_bytes = uploaded.getvalue()
+    uploaded_hash = hashlib.md5(uploaded_bytes).hexdigest()
 
     # jika file baru diupload maka reset kondisi analisis
-    if uploaded != st.session_state.last_file:
+    if uploaded_hash != st.session_state.last_file_hash:
 
-        st.session_state.last_file = uploaded
+        st.session_state.last_file_hash = uploaded_hash
         st.session_state.run_analysis = False
         st.session_state.izin_analisis = False
 
@@ -130,10 +154,7 @@ if uploaded:
     # MEMBACA DATA DARI EXCEL
     # ========================================================
 
-    node_df = pd.read_excel(uploaded, sheet_name="nodes")
-    elem_df = pd.read_excel(uploaded, sheet_name="elements")
-    load_df = pd.read_excel(uploaded, sheet_name="loads")
-    support_df = pd.read_excel(uploaded, sheet_name="tumpuan")
+    node_df, elem_df, load_df, support_df = load_input_data(uploaded_bytes)
 
     # normalisasi nama kolom
     node_df.columns = node_df.columns.str.lower().str.strip()
@@ -513,7 +534,7 @@ if uploaded:
 
 
     st.subheader("Geometri Struktur Rangka")
-    st.pyplot(plot_geometry())
+    render_figure(plot_geometry())
 
 
     # ========================================================
@@ -616,8 +637,7 @@ if uploaded:
         # hitung reaksi tumpuan
         R = K @ u - F
 
-        return u, np.array(force), np.array(stress), np.array(deform), R, K
-
+        return u, np.array(force), np.array(stress), np.array(deform), R
 
     # ========================================================
     # KONTROL HIGHLIGHT TABEL OUTPUT
@@ -678,14 +698,7 @@ if uploaded:
 
         if st.session_state.get("izin_analisis", False):
 
-            u, force, stress, deform, R, K = fem()
-
-            st.session_state.u = u
-            st.session_state.force = force
-            st.session_state.stress = stress
-            st.session_state.deform = deform
-            st.session_state.R = R
-            st.session_state.K = K
+            u, force, stress, deform, R = fem()
 
         if not st.session_state.get("izin_analisis", False):
             st.stop()
@@ -753,7 +766,7 @@ if uploaded:
                 axis=None
             )
             .set_properties(
-                subset=["element","node_i","node_j"],
+                subset=["element", "node_i", "node_j"],
                 **{"text-align": "center"}
             )
             .set_properties(
@@ -920,7 +933,7 @@ if uploaded:
             return fig
 
         st.subheader("Reaksi Tumpuan Struktur Rangka")
-        st.pyplot(plot_reaction())
+        render_figure(plot_reaction())
 
         # ====================================================
         # VISUALISASI REAKSI GLOBAL (Rx dan Ry)
@@ -1024,7 +1037,7 @@ if uploaded:
             return fig
 
         st.subheader("Reaksi Tumpuan Struktur Rangka (Sumbu Global)")
-        st.pyplot(plot_reaction_components())
+        render_figure(plot_reaction_components())
 
 
 # ====================================================
@@ -1111,7 +1124,7 @@ if uploaded:
             return fig
         
         st.subheader("Diagram Gaya Batang Stuktur Rangka")
-        st.pyplot(plot_force())
+        render_figure(plot_force())
 
 # ====================================================
 # DIAGRAM TEGANGAN AKSIAL BATANG
@@ -1192,7 +1205,7 @@ if uploaded:
             return fig
 
         st.subheader("Diagram Tegangan Aksial Batang Struktur Rangka")
-        st.pyplot(plot_stress())
+        render_figure(plot_stress())
 
         # ====================================================
         # DIAGRAM DEFORMASI
@@ -1277,13 +1290,11 @@ if uploaded:
             return fig
 
         st.subheader("Diagram Deformasi Struktur Rangka")
-        st.pyplot(plot_deformation())
+        render_figure(plot_deformation())
 
         # ====================================================
         # DIAGRAM ANIMASI DEFORMASI
         # ====================================================
-        import matplotlib.animation as animation
-
         xmin, xmax = nodes[:,0].min(), nodes[:,0].max()
         ymin, ymax = nodes[:,1].min(), nodes[:,1].max()
 
@@ -1308,95 +1319,87 @@ if uploaded:
             step=0.01
         )
 
-        import time        
-        placeholder = st.empty()
+        frames = np.linspace(0, 1, 40)
 
-        for t in np.linspace(0,1,40):
+        def draw_animation_frame(ax, t):
+            ax.clear()
 
-                fig, ax = plt.subplots()
+            new_nodes = np.array(nodes, dtype=float)
 
-                new_nodes = np.array(nodes, dtype=float)
+            for i in range(n_node):
+                new_nodes[i,0] += u[2*i] * scale * t
+                new_nodes[i,1] += u[2*i+1] * scale * t
 
-                for i in range(n_node):
-                    new_nodes[i,0] += u[2*i] * scale * t
-                    new_nodes[i,1] += u[2*i+1] * scale * t
+            xmin_def = new_nodes[:,0].min()
+            xmax_def = new_nodes[:,0].max()
+            ymin_def = new_nodes[:,1].min()
+            ymax_def = new_nodes[:,1].max()
 
-                xmin_def = new_nodes[:,0].min()
-                xmax_def = new_nodes[:,0].max()
-                ymin_def = new_nodes[:,1].min()
-                ymax_def = new_nodes[:,1].max()
+            xmin_all = min(xmin, xmin_def)
+            xmax_all = max(xmax, xmax_def)
+            ymin_all = min(ymin, ymin_def)
+            ymax_all = max(ymax, ymax_def)
 
-                xmin_all = min(xmin, xmin_def)
-                xmax_all = max(xmax, xmax_def)
-                ymin_all = min(ymin, ymin_def)
-                ymax_all = max(ymax, ymax_def)
+            x_span = xmax_all - xmin_all
+            y_span = ymax_all - ymin_all
+            offset = 0.01 * max(x_span, 1e-9)
 
-                # offset label
-                offset = 0.01 * (xmax_all - xmin_all)
+            label_xmax = np.max(new_nodes[:,0] + offset)
+            xmin_plot = xmin_all - 0.08 * max(x_span, 1e-9)
+            xmax_plot = label_xmax + 0.09 * max(x_span, 1e-9)
 
-                # posisi label paling kanan
-                label_xmax = np.max(new_nodes[:,0] + offset)
+            ax.axis("equal")
+            ax.set_xlim(xmin_plot, xmax_plot)
 
-                # batas kiri kanan mengikuti label
-                xmin_plot = xmin_all - 0.08 * (xmax_all - xmin_all)
-                xmax_plot = label_xmax + 0.09 * (xmax_all - xmin_all)
+            margin_y = 0.2 * max(y_span, 1e-9)
+            ax.set_ylim(ymin_all - margin_y, ymax_all + margin_y)
 
-                ax.axis("equal")
-                ax.set_xlim(xmin_plot, xmax_plot)
+            for (n1,n2) in elements:
+                ax.plot(
+                    [nodes[n1][0], nodes[n2][0]],
+                    [nodes[n1][1], nodes[n2][1]],
+                    "k--",
+                    linewidth=1
+                )
 
-                # margin vertikal
-                margin_y = 0.2 * (ymax_all - ymin_all)
-                ax.set_ylim(ymin_all - margin_y, ymax_all + margin_y)
+            for i,(n1,n2) in enumerate(elements):
+                x1,y1 = new_nodes[n1]
+                x2,y2 = new_nodes[n2]
 
-                # ---------------------------------------
-                # STRUKTUR ASLI
-                # ---------------------------------------
+                color = "blue" if force[i] > 0 else "red"
 
-                for (n1,n2) in elements:
+                ax.plot(
+                    [x1,x2],
+                    [y1,y2],
+                    color=color,
+                    linewidth=3
+                )
 
-                    ax.plot(
-                        [nodes[n1][0], nodes[n2][0]],
-                        [nodes[n1][1], nodes[n2][1]],
-                        "k--",
-                        linewidth=1
-                    )
+            for i,(x,y) in enumerate(new_nodes):
+                ax.plot(x,y,"ro")
+                ax.text(
+                    x + offset,
+                    y + offset,
+                    f"N{i+1}",
+                    color="red"
+                )
 
-                # ---------------------------------------
-                # STRUKTUR DEFORMASI
-                # ---------------------------------------
+            ax.set_title("Animasi Deformasi Struktur Rangka")
 
-                for i,(n1,n2) in enumerate(elements):
+        fig_anim, ax_anim = plt.subplots()
+        draw_animation_frame(ax_anim, frames[0])
 
-                    x1,y1 = new_nodes[n1]
-                    x2,y2 = new_nodes[n2]
+        anim = animation.FuncAnimation(
+            fig_anim,
+            lambda t: draw_animation_frame(ax_anim, t),
+            frames=frames,
+            interval=50,
+            repeat=True,
+            cache_frame_data=False
+        )
 
-                    color = "blue" if force[i] > 0 else "red"
+        animation_html = anim.to_jshtml(default_mode="loop")
+        components.html(animation_html, height=600, scrolling=False)
 
-                    ax.plot(
-                        [x1,x2],
-                        [y1,y2],
-                        color=color,
-                        linewidth=3
-                    )
-
-                # ---------------------------------------
-                # NODE DAN NOMOR NODE YANG BERGERAK
-                # ---------------------------------------
-
-                for i,(x,y) in enumerate(new_nodes):
-
-                    ax.plot(x,y,"ro")
-
-                    ax.text(
-                        x + offset,
-                        y + offset,
-                        f"N{i+1}",
-                        color="red"
-                    )
-                
-                ax.set_title("Animasi Deformasi Struktur Rangka")
-
-
-                placeholder.pyplot(fig)
-                plt.close(fig)
-                time.sleep(0.05)
+        plt.close(fig_anim)
+        del anim
