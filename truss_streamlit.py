@@ -8,6 +8,7 @@
 
 from io import BytesIO
 import hashlib
+from pathlib import Path
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -122,6 +123,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+if st.session_state.pop("reset_scale_to_default", False):
+    st.session_state.scale = 25
+
 if "scale" not in st.session_state:
     st.session_state.scale = 25
     
@@ -190,32 +194,40 @@ if "last_file_hash" not in st.session_state:
 
 uploaded_bytes = None
 uploaded_hash = None
+default_input_path = Path("truss-1.xlsx")
 
 if uploaded is not None:
     uploaded_bytes = uploaded.getvalue()
     uploaded_hash = hashlib.md5(uploaded_bytes).hexdigest()
 
-    # jika file baru diupload maka reset kondisi analisis
-    if uploaded_hash != st.session_state.last_file_hash:
+else:
+    if default_input_path.exists():
+        uploaded_bytes = default_input_path.read_bytes()
+        uploaded_hash = hashlib.md5(uploaded_bytes).hexdigest()
+        st.info(f"Menggunakan file input default: `{default_input_path.name}`")
 
-        st.session_state.last_file_hash = uploaded_hash
-        st.session_state.run_analysis = False
-        st.session_state.izin_analisis = False
+# jika file input berubah maka reset kondisi analisis
+if uploaded_hash is not None and uploaded_hash != st.session_state.last_file_hash:
 
-        # reset skala deformasi ke default
-        if "scale" in st.session_state:
-            del st.session_state["scale"] 
-        
-        # reset hasil FEM
-        for key in ["u", "force", "stress", "deform", "R", "K"]:
-            if key in st.session_state:
-                del st.session_state[key]
+    st.session_state.last_file_hash = uploaded_hash
+    st.session_state.run_analysis = False
+    st.session_state.izin_analisis = False
+
+    # reset skala deformasi ke default pada rerun berikutnya
+    st.session_state.reset_scale_to_default = True
+    
+    # reset hasil FEM
+    for key in ["u", "force", "stress", "deform", "R", "K"]:
+        if key in st.session_state:
+            del st.session_state[key]
+
+    st.rerun()
 
 # ============================================================
 # PROGRAM DIJALANKAN SETELAH FILE DIUPLOAD
 # ============================================================
 
-if uploaded:
+if uploaded_bytes is not None:
 
     # ========================================================
     # MEMBACA DATA DARI EXCEL
